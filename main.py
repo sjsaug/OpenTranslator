@@ -27,7 +27,7 @@ def gui_main():
     message_entry.grid(column=0, row=2, sticky='ew')
 
     # Create a button to send the message, ttk used to match style of other elements
-    send_button = ttk.Button(root, text="Send", command=lambda: threading.Thread(target=init_ai, args=(message_entry.get(), language_dropdown.get(), conversation_text)).start()) # run in a seperate thread to prevent gui from freezing
+    send_button = ttk.Button(root, text="Send", command=lambda: [threading.Thread(target=init_ai, args=(message_entry.get(), language_dropdown.get(), conversation_text)).start(), message_entry.delete(0, 'end')]) # run in a seperate thread to prevent gui from freezing
     send_button.grid(column=0, row=3, sticky='ew')
 
     # Run the GUI
@@ -37,23 +37,23 @@ def init_ai(msg, lang, conversation_text):
     load_dotenv()
     api_key = os.getenv('OAI_key')
     client = OpenAI(api_key = api_key)
-    main_msg = "Translate the following message into " + lang + ": " + msg
-
-    conversation.append({'role': 'user', 'content': main_msg}) #append prev user msg to conversation so the ai has full context of the convo
+    main_msg = "Translate the following text into " + lang + " : " + msg
     response = client.chat.completions.create(
         model='gpt-3.5-turbo',
-        messages=conversation
+        messages=[{'role': 'system', 'content': 'You are a helpful translator. Reply only with the direct translation of the provided text. Do not add any additional information or context.'},
+                  {'role': 'user', 'content': main_msg}
+                  ]
     )
-
-    conversation_text.config(state='normal') # enable the text box so we can add the response
-    conversation_text.insert(tk.END, "You : " + msg + "\n")
-    conversation_text.after(0, lambda: conversation_text.insert(tk.END, "Assistant : " + response.choices[0].message.content + "\n"))
+    moderation_response = client.moderations.create(input=response.choices[0].message.content)
+    moderation_output = moderation_response.results[0]
+    conversation_text.config(state='normal') # enable the text box so we can insert to it
+    if moderation_output.flagged:
+        conversation_text.insert(tk.END, "Your message was flagged\n")
+    else:
+        conversation_text.insert(tk.END, "You : " + msg + "\n")
+        conversation_text.after(0, lambda: conversation_text.insert(tk.END, "Assistant : " + response.choices[0].message.content + "\n"))
     conversation_text.after(0, lambda: conversation_text.config(state='disabled')) # disable the text box so the user can't edit the conversation
-    
-    conversation.append({'role': 'assistant', 'content': response.choices[0].message.content})
-    print(conversation)
-
-conversation = [{'role': 'system', 'content': 'You are a helpful translator. Translate the provided text into the desired language. If no language is specified, tell the user none is not a valid language.'}] #init convo outside of the function so we can append it inside the function
+        
 def main():
     gui_main()
 
