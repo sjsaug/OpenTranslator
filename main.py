@@ -27,7 +27,7 @@ def gui_main():
     message_entry.grid(column=0, row=2, sticky='ew')
 
     # Create a button to send the message
-    send_button = tk.Button(root, text="Send", command=lambda: threading.Thread(target=init_ai, args=(message_entry.get(), language_dropdown.get(), conversation_text)).start())
+    send_button = tk.Button(root, text="Send", command=lambda: threading.Thread(target=init_ai, args=(message_entry.get(), language_dropdown.get(), conversation_text)).start()) # run in a seperate thread to prevent gui from freezing
     send_button.grid(column=0, row=3, sticky='ew')
 
     # Run the GUI
@@ -41,11 +41,13 @@ def init_ai(msg, lang, conversation_text):
     response = client.chat.completions.create(
         model='gpt-3.5-turbo',
         messages=[
-            {'role': 'system', 'content': 'You are a helpful translator. Translate the provided text into the desired language..'},
+            {'role': 'system', 'content': 'You are a helpful translator. Translate the provided text into the desired language.'},
             {'role': 'user', 'content': main_msg}
         ]
     )
-    conversation_text.insert(tk.END, response.choices[0].message.content + "\n")
+
+    #conversation_text.insert(tk.END, "You : " + msg + "\n")
+    conversation_text.after(0, lambda: conversation_text.insert(tk.END, "Assistant : " + response.choices[0].message.content + "\n"))
     
 
 def main():
