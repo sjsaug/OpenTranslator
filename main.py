@@ -11,9 +11,7 @@ def debug_print(var):
 
 def read_config():
     configParser = configparser.RawConfigParser()
-    f = open(r'./openT.cfg', 'r')
-    print(f.read())
-    configFilePath = r'./openT.cfg'
+    configFilePath = r'./ot.cfg'
     configParser.read(configFilePath)
     dev_options = dict(configParser.items('Dev'))
 
@@ -69,11 +67,11 @@ def init_ai(msg, lang, conversation_text):
 
     if enable_debugging:
         debug_print(f"Flagged : {moderation_output.flagged}")
-        debug_print("Categories : ")
-        for category, value in moderation_output.categories.items():
+        debug_print("CATEGORIES")
+        for category, value in dict(moderation_output.categories).items():
             debug_print(f"{category} : {value}")
-        debug_print("Category Scores : ")
-        for category, score in moderation_output.category_scores.items():
+        debug_print("CATEGORY SCORES")
+        for category, score in dict(moderation_output.category_scores).items():
             debug_print(f"{category} : {score}")
 
     conversation_text.config(state='normal') # enable the text box so we can insert to it
