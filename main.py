@@ -4,6 +4,26 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import threading
+import configparser
+
+def debug_print(var):
+    print("[DEBUG] " + var)
+
+def read_config():
+    configParser = configparser.RawConfigParser()
+    f = open(r'./openT.cfg', 'r')
+    print(f.read())
+    configFilePath = r'./openT.cfg'
+    configParser.read(configFilePath)
+    dev_options = dict(configParser.items('Dev'))
+
+    #DEV OPTIONS
+    global enable_debugging
+    enable_debugging = dev_options['enable_debugging']
+    if enable_debugging == "True":
+        enable_debugging = True
+    else:
+        enable_debugging = False
 
 def gui_main():
     root = tk.Tk()
@@ -46,6 +66,16 @@ def init_ai(msg, lang, conversation_text):
     )
     moderation_response = client.moderations.create(input=response.choices[0].message.content)
     moderation_output = moderation_response.results[0]
+
+    if enable_debugging:
+        debug_print(f"Flagged : {moderation_output.flagged}")
+        debug_print("Categories : ")
+        for category, value in moderation_output.categories.items():
+            debug_print(f"{category} : {value}")
+        debug_print("Category Scores : ")
+        for category, score in moderation_output.category_scores.items():
+            debug_print(f"{category} : {score}")
+
     conversation_text.config(state='normal') # enable the text box so we can insert to it
     if moderation_output.flagged:
         conversation_text.insert(tk.END, "Your message was flagged\n")
@@ -55,6 +85,7 @@ def init_ai(msg, lang, conversation_text):
     conversation_text.after(0, lambda: conversation_text.config(state='disabled')) # disable the text box so the user can't edit the conversation
         
 def main():
+    read_config()
     gui_main()
 
 if __name__ == "__main__":
